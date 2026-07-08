@@ -1,6 +1,4 @@
 from datetime import date, timedelta
-from sqlalchemy.orm import Session
-import models
 import random
 
 # Real shift patterns from your pharmacy rosters
@@ -42,11 +40,11 @@ EMPLOYEE_PREFERENCES = {
     "Billie Kayoni": {"max_shifts": 5},
 }
 
-def generate_weekly_roster(db: Session):
-    """Generate a weekly roster using real pharmacy patterns with exception handling"""
+def generate_weekly_roster(supabase_client):
+    """Generate a weekly roster using Supabase"""
     
     # Clear old roster
-    db.query(models.RosterAssignment).delete()
+    supabase_client.table("assignments").delete().neq("id", 0).execute()
     
     # Calculate week dates (Monday to Saturday)
     today = date.today()
@@ -55,124 +53,110 @@ def generate_weekly_roster(db: Session):
     days_of_week = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
     
     # Get active employees
-    employees = db.query(models.User).filter(
-        models.User.role == "EMPLOYEE",
-        models.User.is_active == True
-    ).all()
+    result = supabase_client.table("users").select("*").eq("role", "EMPLOYEE").eq("is_active", True).execute()
+    employees = result.data if result.data else []
     
     if not employees:
         return {"status": "error", "message": "No active employees found"}
     
-    # Get active exceptions for each employee
+    # Get branches
+    result = supabase_client.table("branches").select("*").execute()
+    branches = result.data if result.data else []
+    branch_map = {b['name']: b['id'] for b in branches}
+    
+    # Get active exceptions
+    result = supabase_client.table("employee_exceptions").select("*").eq("is_active", True).execute()
+    exceptions = result.data if result.data else []
+    
+    # Build exception lookup
     employee_exceptions = {}
     for emp in employees:
-        exceptions = db.query(models.EmployeeException).filter(
-            models.EmployeeException.user_id == emp.id,
-            models.EmployeeException.is_active == True,
-            models.EmployeeException.start_date <= date.today()
-        ).all()
-        
-        # Filter exceptions that are still active (end_date not passed)
-        active_exceptions = []
+        emp_exceptions = []
         for ex in exceptions:
-            if ex.end_date is None or ex.end_date >= date.today():
-                active_exceptions.append(ex)
-        
-        employee_exceptions[emp.id] = active_exceptions
-    
-    # Get branches
-    branches = db.query(models.Branch).all()
-    branch_map = {b.name: b.id for b in branches}
+            if ex['user_id'] == emp['id']:
+                start_date = date.fromisoformat(ex['start_date'])
+                end_date = date.fromisoformat(ex['end_date']) if ex.get('end_date') else None
+                if start_date <= today and (end_date is None or end_date >= today):
+                    emp_exceptions.append(ex)
+        employee_exceptions[emp['id']] = emp_exceptions
     
     # Track shifts per employee
-    shift_counts = {emp.id: 0 for emp in employees}
-    working_today = set()
-    
+    shift_counts = {emp['id']: 0 for emp in employees}
     assignments_created = 0
     uncovered_shifts = 0
     
     # Generate schedule for each day
     for day_idx, day in enumerate(days_of_week):
         date_obj = week_dates[day_idx]
+        date_str = date_obj.isoformat()
         working_today = set()
         
-        day_requirements = SHIFT_REQUIREMENTS.copy()
-        
-        for req in day_requirements:
+        for req in SHIFT_REQUIREMENTS:
             candidates = []
             
             for emp in employees:
-                # Check if employee is already working today
-                if emp.id in working_today:
+                # Check if already working today
+                if emp['id'] in working_today:
                     continue
                 
                 # Check for active exceptions
-                exceptions = employee_exceptions.get(emp.id, [])
-                has_active_exception = False
-                reduced_hours = None
+                exceptions = employee_exceptions.get(emp['id'], [])
                 is_sick_or_leave = False
+                reduced_hours = None
                 
                 for ex in exceptions:
-                    # If exception is active during this week
-                    if ex.start_date <= date_obj <= (ex.end_date or date_obj):
-                        has_active_exception = True
-                        if ex.reduced_hours_per_week:
-                            reduced_hours = ex.reduced_hours_per_week
-                        # Check if sick or leave
-                        if ex.exception_type in ["SICK", "LEAVE"]:
-                            is_sick_or_leave = True
-                            break
+                    if ex['exception_type'] in ["SICK", "LEAVE"]:
+                        is_sick_or_leave = True
+                        break
+                    if ex.get('reduced_hours_per_week'):
+                        reduced_hours = ex['reduced_hours_per_week']
                 
-                # Skip if employee is on sick or leave
                 if is_sick_or_leave:
                     continue
                 
-                # Check shift count limit (respect reduced hours)
+                # Check shift count limit
                 max_shifts = 5
                 if reduced_hours:
-                    # Calculate max shifts based on reduced hours (assuming 8-hour shifts)
                     max_shifts = int(reduced_hours / 8)
                     if max_shifts < 1:
                         max_shifts = 1
                 
-                if shift_counts[emp.id] >= max_shifts:
+                if shift_counts[emp['id']] >= max_shifts:
                     continue
                 
                 # Check employee preferences
-                pref = EMPLOYEE_PREFERENCES.get(emp.name, {})
+                pref = EMPLOYEE_PREFERENCES.get(emp['name'], {})
                 
-                # Check for off days
                 if pref.get("off_days") and day in pref["off_days"]:
                     continue
                 
-                # Check role match
-                if emp.job_title.lower() != req["role"].lower():
+                if emp['job_title'].lower() != req['role'].lower():
                     continue
                 
                 candidates.append(emp)
             
             if candidates:
                 # Sort by fewest shifts (fairness)
-                candidates.sort(key=lambda e: shift_counts[e.id])
+                candidates.sort(key=lambda e: shift_counts[e['id']])
                 chosen = candidates[0]
                 
                 # Create assignment
-                assignment = models.RosterAssignment(
-                    user_id=chosen.id,
-                    branch_id=branch_map.get(req["branch"]),
-                    date=date_obj,
-                    start_time=req["start"],
-                    end_time=req["end"]
-                )
-                db.add(assignment)
+                assignment_data = {
+                    "user_id": chosen['id'],
+                    "branch_id": branch_map.get(req['branch']),
+                    "date": date_str,
+                    "start_time": req['start'],
+                    "end_time": req['end'],
+                    "is_locum": False
+                }
                 
-                shift_counts[chosen.id] += 1
-                working_today.add(chosen.id)
+                supabase_client.table("assignments").insert(assignment_data).execute()
+                
+                shift_counts[chosen['id']] += 1
+                working_today.add(chosen['id'])
                 assignments_created += 1
             else:
                 uncovered_shifts += 1
-    
-    db.commit()
     
     return {
         "status": "success",
