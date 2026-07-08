@@ -14,19 +14,36 @@ import supabase_db as db
 
 app = FastAPI(title="CHEBU Scheduler API")
 
-# CORS - Allow all origins for now (update for production)
+# CORS - Properly configured for production
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "https://scheduler-frontend.vercel.app",
+        "https://scheduler-frontend.vercel.app/",
         "https://chebu-scheduler.vercel.app",
+        "https://scheduler-api-nhao.onrender.com",
         "http://localhost:5173",
         "http://localhost:3000",
-        "*"  # Temporary - allow all origins for testing
+        "http://127.0.0.1:8000",
     ],
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=[
+        "Accept",
+        "Accept-Encoding",
+        "Accept-Language",
+        "Authorization",
+        "Cache-Control",
+        "Connection",
+        "Content-Type",
+        "Host",
+        "Origin",
+        "Referer",
+        "User-Agent",
+        "X-Requested-With",
+    ],
+    expose_headers=["Content-Length", "Content-Type"],
+    max_age=86400,  # 24 hours
 )
 
 # Database dependency
@@ -57,6 +74,10 @@ class PasswordResetConfirm(BaseModel):
 @app.get("/")
 def read_root():
     return {"message": "Welcome to CHEBU Scheduler API"}
+
+@app.options("/{path:path}")
+async def options_handler():
+    return {"message": "OK"}
 
 @app.post("/api/login")
 def login(request: LoginRequest):
