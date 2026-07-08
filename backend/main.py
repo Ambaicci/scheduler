@@ -14,10 +14,16 @@ import supabase_db as db
 
 app = FastAPI(title="CHEBU Scheduler API")
 
-# CORS
+# CORS - Allow all origins for now (update for production)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "https://scheduler-frontend.vercel.app",
+        "https://chebu-scheduler.vercel.app",
+        "http://localhost:5173",
+        "http://localhost:3000",
+        "*"  # Temporary - allow all origins for testing
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
