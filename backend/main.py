@@ -1,4 +1,21 @@
-# CORS - Properly configured for production
+from fastapi import FastAPI, Depends, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+import hashlib
+import base64
+from datetime import date
+import random
+import string
+import time
+import scheduler
+import scheduler_service
+import atexit
+import supabase_db as db
+
+# 1. Create the FastAPI app FIRST
+app = FastAPI(title="CHEBU Scheduler API")
+
+# 2. Add CORS middleware SECOND
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -16,3 +33,7 @@ app.add_middleware(
     expose_headers=["Content-Length", "Content-Type"],
     max_age=86400,  # 24 hours
 )
+
+# 3. Database dependency
+def get_db():
+    return db.supabase
