@@ -14,6 +14,7 @@ import {
   XCircleIcon,
   PlusIcon
 } from '@heroicons/react/24/outline';
+import { API_BASE_URL } from '../config'; // <-- IMPORTED API URL
 
 const EmployeeDashboard = ({ user, onLogout }) => {
   const [schedule, setSchedule] = useState([]);
@@ -44,7 +45,7 @@ const EmployeeDashboard = ({ user, onLogout }) => {
 
   const fetchSchedule = async () => {
     try {
-      const response = await fetch(`http://127.0.0.1:8000/api/my-schedule/${user.user_id}`);
+      const response = await fetch(`${API_BASE_URL}/api/my-schedule/${user.user_id}`);
       const data = await response.json();
       setSchedule(data);
       
@@ -63,7 +64,7 @@ const EmployeeDashboard = ({ user, onLogout }) => {
 
   const fetchTeamRoster = async () => {
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/master-roster');
+      const response = await fetch(`${API_BASE_URL}/api/master-roster`);
       const data = await response.json();
       setTeamRoster(data);
     } catch (err) {
@@ -73,7 +74,7 @@ const EmployeeDashboard = ({ user, onLogout }) => {
 
   const fetchEmployees = async () => {
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/admin/employees');
+      const response = await fetch(`${API_BASE_URL}/api/admin/employees`);
       const data = await response.json();
       setEmployees(data.filter(e => e.id !== user.user_id && e.is_active));
     } catch (err) {
@@ -83,7 +84,7 @@ const EmployeeDashboard = ({ user, onLogout }) => {
 
   const fetchSwapRequests = async () => {
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/swap-requests');
+      const response = await fetch(`${API_BASE_URL}/api/swap-requests`);
       const data = await response.json();
       setSwapRequests(data);
     } catch (err) {
@@ -99,7 +100,7 @@ const EmployeeDashboard = ({ user, onLogout }) => {
 
     try {
       const response = await fetch(
-        `http://127.0.0.1:8000/api/swap-request?requesting_user_id=${user.user_id}&target_user_id=${targetEmployee}&assignment_id=${selectedAssignment}&notes=${swapNotes}`,
+        `${API_BASE_URL}/api/swap-request?requesting_user_id=${user.user_id}&target_user_id=${targetEmployee}&assignment_id=${selectedAssignment}&notes=${swapNotes}`,
         { method: 'POST' }
       );
       const data = await response.json();
@@ -124,7 +125,7 @@ const EmployeeDashboard = ({ user, onLogout }) => {
 
     try {
       const response = await fetch(
-        `http://127.0.0.1:8000/api/time-off-request?user_id=${user.user_id}&start_date=${timeOffStart}&end_date=${timeOffEnd}&reason=${timeOffReason}&notes=${timeOffNotes}`,
+        `${API_BASE_URL}/api/time-off-request?user_id=${user.user_id}&start_date=${timeOffStart}&end_date=${timeOffEnd}&reason=${timeOffReason}&notes=${timeOffNotes}`,
         { method: 'POST' }
       );
       const data = await response.json();

@@ -13,6 +13,7 @@ import {
   CalendarDaysIcon,
   UsersIcon,
 } from '@heroicons/react/24/outline';
+import { API_BASE_URL } from '../config'; // <-- IMPORTED API URL
 
 const AdminDashboard = ({ user, onLogout }) => {
   const [activeTab, setActiveTab] = useState('roster');
@@ -37,7 +38,7 @@ const AdminDashboard = ({ user, onLogout }) => {
 
   const fetchEmployees = async () => {
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/admin/employees');
+      const response = await fetch(`${API_BASE_URL}/api/admin/employees`);
       const data = await response.json();
       setEmployees(data);
     } catch (err) {
@@ -47,7 +48,7 @@ const AdminDashboard = ({ user, onLogout }) => {
 
   const fetchRoster = async () => {
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/master-roster');
+      const response = await fetch(`${API_BASE_URL}/api/master-roster`);
       const data = await response.json();
       setRoster(data);
     } catch (err) {
@@ -57,7 +58,7 @@ const AdminDashboard = ({ user, onLogout }) => {
 
   const fetchExceptions = async () => {
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/admin/exceptions');
+      const response = await fetch(`${API_BASE_URL}/api/admin/exceptions`);
       const data = await response.json();
       setExceptions(data);
     } catch (err) {
@@ -67,7 +68,7 @@ const AdminDashboard = ({ user, onLogout }) => {
 
   const fetchSwapRequests = async () => {
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/swap-requests');
+      const response = await fetch(`${API_BASE_URL}/api/swap-requests`);
       const data = await response.json();
       setSwapRequests(data);
     } catch (err) {
@@ -77,7 +78,7 @@ const AdminDashboard = ({ user, onLogout }) => {
 
   const fetchTimeOffRequests = async () => {
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/time-off-requests');
+      const response = await fetch(`${API_BASE_URL}/api/time-off-requests`);
       const data = await response.json();
       setTimeOffRequests(data);
     } catch (err) {
@@ -105,7 +106,7 @@ const AdminDashboard = ({ user, onLogout }) => {
     setLoading(true);
     setMessage('');
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/generate-roster', {
+      const response = await fetch(`${API_BASE_URL}/api/generate-roster`, {
         method: 'POST',
       });
       const data = await response.json();
@@ -127,7 +128,7 @@ const AdminDashboard = ({ user, onLogout }) => {
 
     try {
       const response = await fetch(
-        `http://127.0.0.1:8000/api/admin/exceptions?user_id=${selectedEmployee}&exception_type=${exceptionType}&start_date=${exceptionStartDate}&end_date=${exceptionEndDate}&reduced_hours_per_week=${reducedHours}&notes=${exceptionNotes}`,
+        `${API_BASE_URL}/api/admin/exceptions?user_id=${selectedEmployee}&exception_type=${exceptionType}&start_date=${exceptionStartDate}&end_date=${exceptionEndDate}&reduced_hours_per_week=${reducedHours}&notes=${exceptionNotes}`,
         { method: 'POST' }
       );
       const data = await response.json();
@@ -155,7 +156,7 @@ const AdminDashboard = ({ user, onLogout }) => {
   const handleSwapRequest = async (requestId, status) => {
     try {
       const response = await fetch(
-        `http://127.0.0.1:8000/api/swap-request/${requestId}?status=${status}`,
+        `${API_BASE_URL}/api/swap-request/${requestId}?status=${status}`,
         { method: 'PUT' }
       );
       const data = await response.json();
@@ -172,7 +173,7 @@ const AdminDashboard = ({ user, onLogout }) => {
   const handleTimeOffRequest = async (requestId, status) => {
     try {
       const response = await fetch(
-        `http://127.0.0.1:8000/api/time-off-request/${requestId}?status=${status}`,
+        `${API_BASE_URL}/api/time-off-request/${requestId}?status=${status}`,
         { method: 'PUT' }
       );
       const data = await response.json();
@@ -197,7 +198,7 @@ const AdminDashboard = ({ user, onLogout }) => {
       });
       
       const response = await fetch(
-        `http://127.0.0.1:8000/api/admin/employees/${editingEmployee.id}?${params.toString()}`,
+        `${API_BASE_URL}/api/admin/employees/${editingEmployee.id}?${params.toString()}`,
         { method: 'PUT' }
       );
       const data = await response.json();
@@ -505,7 +506,7 @@ const AdminDashboard = ({ user, onLogout }) => {
                       <button
                         onClick={async () => {
                           if (confirm('Deactivate this exception?')) {
-                            const response = await fetch(`http://127.0.0.1:8000/api/admin/exceptions/${ex.id}`, {
+                            const response = await fetch(`${API_BASE_URL}/api/admin/exceptions/${ex.id}`, {
                               method: 'DELETE'
                             });
                             if (response.ok) {
