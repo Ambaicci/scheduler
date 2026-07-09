@@ -1,6 +1,6 @@
 // API URL
 // Use local backend for development
-export const API_BASE_URL = "http://127.0.0.1:8000";
+// export const API_BASE_URL = "http://127.0.0.1:8000";
 
-// Uncomment this line to use production
-// export const API_BASE_URL = "https://scheduler-api-nhao.onrender.com";
+// Use production backend
+export const API_BASE_URL = "https://scheduler-api-nhao.onrender.com";
