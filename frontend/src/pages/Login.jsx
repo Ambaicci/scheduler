@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { EnvelopeIcon, LockClosedIcon, UserIcon } from '@heroicons/react/24/outline';
+import { API_BASE_URL } from '../config'; // <-- IMPORTED API URL
 
 const Login = ({ onLogin }) => {
   const [email, setEmail] = useState('');
@@ -17,7 +18,8 @@ const Login = ({ onLogin }) => {
     setError('');
 
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/login', {
+      // <-- UPDATED TO USE API_BASE_URL
+      const response = await fetch(`${API_BASE_URL}/api/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -45,7 +47,8 @@ const Login = ({ onLogin }) => {
     setResetMessage('');
 
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/reset-password', {
+      // <-- UPDATED TO USE API_BASE_URL
+      const response = await fetch(`${API_BASE_URL}/api/reset-password`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
